@@ -51,11 +51,15 @@ ansible-playbook -i ansible/hosts ansible/playbook.yml -l clickhouse01
 ansible-playbook -i ansible/hosts ansible/playbook.yml -l gpmaster,gpstandby,gpseg01,gpseg02,gpseg03,gpseg014
 ```
 
-* После разворачивания необходимо произвести сборку и установку PXF (PXF пока не собирается ролью, происходит только подготовка окружения и скачивание исходников).
-* Необходимо настроить утилиту s3cmd на сервере PostgreSQL.
+* После разворачивания необходимо произвести сборку и установку PXF (PXF пока не собирается ролью, происходит только подготовка окружения и скачивание исходников)* 
+* Необходимо настроить утилиту s3cmd на сервере PostgreSQL* 
 * За основу взять тестовый датасет PostgresPro авиаперевозки.
 
+
 ** Файл [DV.txt](DV.txt)содержит описание хранилища
+
 ** Файл [DV_load_data.txt](DV_load_data.txt)содержит описание загрузки данных их PostgreSQL в GreenGage, через S3
+
 ** Файл [sql_import.txt](sql_import.txt)содержит описание скрипты для загрузки данных из PostgreSQL в S3
+
 ** Файл [query.txt](query.txt)содержит описание запросы и описание получения данных в Clickhouse
