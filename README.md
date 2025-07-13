@@ -18,7 +18,7 @@
 
 ### Генерация сертификата
 * Установить OpenSSL
-* Создать файл [san.cnf](#san.cnf)
+* Создать файл [san.cnf](san.cnf)
 * Актуализировать в нем имена и IP адреса
 * Выполнить команду:
 ```
@@ -55,7 +55,7 @@ ansible-playbook -i ansible/hosts ansible/playbook.yml -l gpmaster,gpstandby,gps
 * Необходимо настроить утилиту s3cmd на сервере PostgreSQL.
 * За основу взять тестовый датасет PostgresPro авиаперевозки.
 
-Файл [DV.txt](DV.txt)содержит описание хранилища
-Файл [DV_load_data.txt](DV_load_data.txt)содержит описание загрузки данных их PostgreSQL в GreenGage, через S3
-Файл [sql_import.txt](sql_import.txt)содержит описание скрипты для загрузки данных из PostgreSQL в S3
-Файл [query.txt](query.txt)содержит описание запросы и описание получения данных в Clickhouse
+** Файл [DV.txt](DV.txt)содержит описание хранилища
+** Файл [DV_load_data.txt](DV_load_data.txt)содержит описание загрузки данных их PostgreSQL в GreenGage, через S3
+** Файл [sql_import.txt](sql_import.txt)содержит описание скрипты для загрузки данных из PostgreSQL в S3
+** Файл [query.txt](query.txt)содержит описание запросы и описание получения данных в Clickhouse
