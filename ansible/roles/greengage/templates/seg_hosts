@@ -1,0 +1,3 @@
+{% for key in groups['gp_segments'] %}
+{{ hostvars[key]['ansible_hostname'] }}
+{% endfor %}

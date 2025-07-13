@@ -1,0 +1,39 @@
+*filter
+:INPUT ACCEPT [27246:98070801]
+:FORWARD ACCEPT [824:113864]
+:OUTPUT ACCEPT [15032:1397748]
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 5432 -j ACCEPT
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 6432 -j ACCEPT
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 9000 -j ACCEPT
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 8123 -j ACCEPT
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 9001 -j ACCEPT
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 9002 -j ACCEPT
+-A INPUT -i enp0s9 -p icmp --icmp-type 8 -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -i enp0s9 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i enp0s9 -j DROP
+COMMIT
+*nat
+:PREROUTING ACCEPT [314:25711]
+:INPUT ACCEPT [34:3280]
+:OUTPUT ACCEPT [98:7135]
+:POSTROUTING ACCEPT [298:22739]
+-A PREROUTING -p tcp -m tcp --dport 5432 -j DNAT --to-destination 192.168.56.2:5432
+-A PREROUTING -p tcp -m tcp --dport 6432 -j DNAT --to-destination 192.168.56.6:5432
+-A PREROUTING -p tcp -m tcp --dport 9000 -j DNAT --to-destination 192.168.56.4:9000
+-A PREROUTING -p tcp -m tcp --dport 8123 -j DNAT --to-destination 192.168.56.4:8123
+-A PREROUTING -p tcp -m tcp --dport 9001 -j DNAT --to-destination 192.168.56.3:9001
+-A PREROUTING -p tcp -m tcp --dport 9002 -j DNAT --to-destination 192.168.56.3:9000
+-A POSTROUTING -d 192.168.56.2/32 -p tcp -m tcp --dport 5432 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -d 192.168.56.6/32 -p tcp -m tcp --dport 5432 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -d 192.168.56.4/32 -p tcp -m tcp --dport 9000 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -d 192.168.56.4/32 -p tcp -m tcp --dport 8123 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -d 192.168.56.3/32 -p tcp -m tcp --dport 9001 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -d 192.168.56.3/32 -p tcp -m tcp --dport 9002 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -o enp0s9 -j MASQUERADE
+COMMIT
+
+
+
+
+

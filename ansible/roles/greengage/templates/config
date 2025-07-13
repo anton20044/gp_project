@@ -1,0 +1,14 @@
+ARRAY_NAME="Greengage DB cluster"
+SEG_PREFIX=gpseg
+PORT_BASE=10000
+declare -a DATA_DIRECTORY=(/data1/primary /data1/primary )
+{% for key in groups['gp_master'] %}
+MASTER_HOSTNAME={{ hostvars[key]['ansible_hostname'] }}
+{% endfor %}
+MASTER_DIRECTORY=/data1/master
+MASTER_PORT=5432
+TRUSTED_SHELL=ssh
+CHECK_POINT_SEGMENTS={{ count_segments }}
+ENCODING=UNICODE
+MIRROR_PORT_BASE=10500
+declare -a MIRROR_DATA_DIRECTORY=(/data1/mirror /data1/mirror )

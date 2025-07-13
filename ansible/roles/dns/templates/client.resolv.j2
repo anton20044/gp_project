@@ -1,0 +1,5 @@
+domain home.local
+search home.local
+{% for val in dns_ns %}
+nameserver {{ val }}
+{% endfor %}

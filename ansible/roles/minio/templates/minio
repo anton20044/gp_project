@@ -1,0 +1,7 @@
+MINIO_VOLUMES="{{ minio_data }}"
+
+MINIO_OPTS="--certs-dir /etc/minio/certs --address 192.168.56.3:9000 --console-address 192.168.56.3:9001"
+
+MINIO_ROOT_USER={{ minio_admin }}
+
+MINIO_ROOT_PASSWORD={{ minio_pass }}

@@ -1,0 +1,6 @@
+---
+
+prom_members: "{{ groups['all'] }}"
+prom_pg_members: "{{ groups['postgresql'] }}"
+ip_addr: 192.168.56.6
+ip_addr_mg: 192.168.57.6

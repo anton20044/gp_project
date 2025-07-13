@@ -1,0 +1,4 @@
+---
+minio_admin: minioadmin
+minio_pass: minioadmin
+minio_data: /mnt/data

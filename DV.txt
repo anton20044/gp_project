@@ -1,0 +1,254 @@
+drop database if exists Data;
+create database Data;
+
+create extension if not exists pxf;
+
+drop schema if exists dv cascade;
+create schema if not exists dv;
+
+----airports
+--hub
+create table if not exists dv.hub_airports (
+	hash_key_airport_code char(32),
+	airport_code varchar(3) not null,
+	airport_name varchar(40) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_airport_code);
+
+--sat
+create table if not exists dv.sat_airports(
+	hash_key_airport_code char(32),    
+	city varchar(32),
+	coordinates point,
+	timezone VARCHAR(32),
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_airport_code);
+
+--link
+create table if not exists dv.link_airports_flights (
+	hash_key_link char(32),
+	hash_key_airport_code_departure char(32) not null,
+	hash_key_airport_code_arrival char(32) not null,
+	hash_key_flight_id char(32) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_link);
+
+
+----aircrafts
+--hub
+create table if not exists dv.hub_aircrafts (
+	hash_key_aircrafts char(32),
+	aircrafts_code varchar(10) not null,	
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED REPLICATED;
+
+--sat
+create table if not exists dv.sat_aircrafts(
+	hash_key_aircrafts char(32),
+	model varchar(40) not null,
+    range varchar(10) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED REPLICATED;
+
+--link
+create table if not exists dv.link_aircrafts_seats (
+	hash_key_link char(32),
+	hash_key_aircrafts char(32) not null,
+	hash_key_seat_no char(32) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_seat_no);
+
+create table if not exists dv.link_aircrafts_flights (
+	hash_key_link char(32),
+	hash_key_aircrafts char(32) not null,
+	hash_key_flight_id char(32) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_flight_id);
+
+
+----seats
+--hub
+create table if not exists dv.hub_seats (
+	hash_key_seat_no char(32),
+	seat_no varchar(3) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_seat_no);
+
+
+--sat
+create table if not exists dv.sat_seats(
+	hash_key_seat_no char(32),
+    fare_conditions VARCHAR(10),
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_seat_no);
+
+
+
+----flights
+--hub
+create table if not exists dv.hub_flights (
+	hash_key_flight_id char(32),
+	flight_id varchar(10) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_flight_id);
+
+
+--sat
+create table if not exists dv.sat_flights(
+	hash_key_flight_id char(32),
+	scheduled_departure timestamptz,
+	scheduled_arrival timestamptz,
+	status varchar(20),
+	actual_departure timestamptz,
+	actual_arrival timestamptz,	
+    name_system char(32) not null,
+	date_load timestamp not null,
+	scheduled_departure_dt date
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (scheduled_arrival)
+PARTITION BY RANGE (scheduled_departure_dt)
+(start('2016-07-01') INCLUSIVE end ('2017-11-01') INCLUSIVE every (30), default partition others);
+
+
+----bookings
+--hub
+create table if not exists dv.hub_bookings (
+	hash_key_book_ref char(32),
+	book_ref varchar(10) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_book_ref);
+
+--sat
+create table if not exists dv.sat_bookings(
+	hash_key_book_ref char(32),
+    book_date timestamptz,
+	total_amount numeric(10,2),
+	name_system char(32) not null,
+	date_load timestamp not null,
+	book_date_dt Date
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_book_ref)
+PARTITION BY RANGE (book_date_dt) 
+    (start('2016-07-01') INCLUSIVE end ('2017-10-01') INCLUSIVE every (30), default partition others);
+
+--link
+create table if not exists dv.link_bookings_tikets (
+	hash_key_link char(32),
+	hash_key_book_ref char(32) not null,
+	hash_key_tiket_no char(32) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_link);
+
+
+----tickets
+--hub
+create table if not exists dv.hub_tickets(
+	hash_key_ticket_no char(32),
+	ticket_no varchar(15) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_ticket_no);
+
+--sat
+create table if not exists dv.sat_tickets(
+	hash_key_ticket_no char(32),
+    passanger_id varchar(20),
+	passenger_name text,
+	contact_data jsonb,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_ticket_no);
+
+
+
+----boarding_passes
+--hub
+create table if not exists dv.hub_boarding_passes (
+	hash_key_flight_id char(32),
+	flight_id varchar(15) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_flight_id);
+
+--sat
+create table if not exists dv.sat_boarding_passes(
+	hash_key_flight_id char(32),
+    boarding_no integer,
+	seat_no varchar(4),
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_flight_id);
+
+
+----ticket_flights
+--sat
+create table if not exists dv.sat_ticket_flights(
+	hash_key_ticket_no char(32),
+	hash_key_flight_id char(32),	
+	fare_conditions varchar(10),
+	amount numeric(10,2),
+    name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_ticket_no)
+
+
+--link
+create table if not exists dv.link_tikets_flight_boarding (
+	hash_key_link char(32),
+	hash_key_ticket_no char(32) not null,
+	hash_key_flight_id char(32) not null,
+	name_system char(32) not null,
+	date_load timestamp not null
+)
+WITH (appendonly = true, orientation = column, compresstype=ZSTD, compresslevel=5) 
+DISTRIBUTED BY (hash_key_link);
+
+

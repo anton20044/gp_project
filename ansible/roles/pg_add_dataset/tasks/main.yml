@@ -1,0 +1,21 @@
+---
+
+- name: Download dataset
+  shell: wget https://edu.postgrespro.ru/demo-big.zip -P /tmp/
+  when: "'postgresql' in group_names"
+  tags:
+    - dataset
+
+- name: Unzip dataset
+  shell: unzip /tmp/demo-big.zip -d /tmp/
+  when: "'postgresql' in group_names"
+  tags:
+    - dataset
+
+- name: Load dataset in DB
+  shell: psql < /tmp/demo-big-20170815.sql
+  when: "'postgresql' in group_names"
+  become: true
+  become_user: postgres
+  tags:
+    - dataset

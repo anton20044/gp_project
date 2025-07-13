@@ -1,0 +1,43 @@
+---
+
+- hosts: routers
+  become: yes
+  roles:
+    - router
+
+- hosts: all
+  become: yes
+  roles:
+    - time
+    - dns    
+    - log
+    - minio
+
+- hosts: postgresql
+  become: yes
+  roles:
+    - pgsql
+    - pg_add_dataset
+
+- hosts: gp
+  become: yes
+  roles:
+    - greengage
+
+- hosts: gp
+  remote_user: gpadmin
+  become: yes
+  become_user: gpadmin
+  roles:
+    - gg_conf_ssh
+    - pxf
+
+- hosts: clickhouse
+  become: yes
+  roles:
+    - clickhouse
+
+- hosts: all
+  become: yes
+  roles:
+    - network

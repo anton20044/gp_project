@@ -1,0 +1,394 @@
+---
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - greengage
+
+- name: Install pack
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - locales
+    - bash
+    - bzip2
+    - iproute2
+    - iputils-ping
+    - krb5-multidev
+    - libapr1
+    - libaprutil1
+    - libcurl3-gnutls
+    - libcurl4
+    - libevent-2.1-7
+    - libldap-2.5-0
+    - libreadline8
+    - libuuid1
+    - libxml2
+    - libyaml-0-2
+    - less
+    - net-tools
+    - openssh-client
+    - openssh-server
+    - openssl
+    - perl
+    - rsync
+    - sed
+    - tar
+    - zip
+    - zlib1g
+    - openjdk-17-jdk
+    - pip
+    - git
+    - python-pip
+    - build-essential
+    - maven
+    
+  tags:
+    - greengage
+
+#- name: Install pack from pip
+#  ansible.builtin.pip:
+#    name: "{{ item }}"
+#    state: present
+#  loop:
+#    - psutil==5.7.0    
+#  become: true
+#  become_user: root
+#  tags:
+#    - greengage
+
+- name: Set locale using localectl
+  become: true
+  shell: localectl set-locale LANG=en_US.UTF-8
+  changed_when: false
+  tags:
+    - greengage
+
+- name: Off HTP
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+  tags:
+    - greengage  
+
+- name: Add group
+  ansible.builtin.group:
+    name: gpadmin
+    state: present
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Add user gpadmin on master
+  ansible.builtin.user:
+    name: gpadmin
+    create_home: yes
+    uid: 980
+    group: gpadmin
+    shell: /bin/bash
+    password: '$y$j9T$rfn2Il6HDJzmbhLlFN075/$/xL.Ju2ifXRF3/i1pjh5Q75QA1SCqvBzSlygL9MlI83'
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Create folder for ssh
+  ansible.builtin.file:
+    path: /home/gpadmin/.ssh
+    state: directory
+    mode: '0750'
+    owner: gpadmin
+    group: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Copy key
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
+    owner: gpadmin
+    group: gpadmin
+  loop:
+    - { src: private.key, dest: /home/gpadmin/.ssh/id_rsa, mode: '0600' }
+    - { src: pub.key, dest: /home/gpadmin/.ssh/id_rsa.pub, mode:  '0644' }
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Add pub key
+  shell: cat ~/.ssh/id_rsa.pub  >> ~/.ssh/authorized_keys  
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage    
+
+- name: Set soft and hard limits for open files for a user
+  community.general.pam_limits:
+    domain: gpadmin
+    limit_type: "{{ item}}"
+    limit_item: nofile
+    value: "524288"
+  loop:
+    - soft
+    - hard
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Set soft and hard limits for nopoc files for a user
+  community.general.pam_limits:
+    domain: gpadmin
+    limit_type: "{{ item}}"
+    limit_item: nproc
+    value: "150000"
+  loop:
+    - soft
+    - hard
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Off RemoveIPC
+  lineinfile:
+    path: /etc/systemd/logind.conf  
+    line: "RemoveIPC=no" 
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Restart systemd-logind
+  service:
+    name: systemd-logind
+    state: restarted
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Create file for sudoers
+  file:
+    path: /etc/sudoers.d/gpadmin
+    state: touch
+    owner: root
+    group: root
+    mode: 0440
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Add gpadmin sudoers
+  lineinfile:
+    path: /etc/sudoers.d/gpadmin  
+    line: "gpadmin ALL=(ALL) NOPASSWD:ALL" 
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Change limit ssh
+  lineinfile:
+    path: /etc/ssh/sshd_config 
+    line: "MaxStartups 1000:30:1022" 
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Restart sshd
+  service:
+    name: sshd
+    state: restarted
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Off StrictHostKeyChecking ssh
+  lineinfile:
+    path: /etc/ssh/ssh_config 
+    line: "StrictHostKeyChecking no" 
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Restart ssh
+  service:
+    name: ssh
+    state: restarted
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+
+- name: Git clone
+  shell: git clone --recurse-submodules https://github.com/GreengageDB/greengage.git /home/gpadmin/greengage
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+
+- name: Install depend
+  shell: /home/gpadmin/greengage/README.ubuntu.bash
+  become: true
+  become_user: root
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+
+- name: Pytho2 link
+  shell: ln -s python2 /usr/bin/python
+  become: true
+  become_user: root
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+
+- name: Install locale
+  shell: locale-gen "en_US.UTF-8"
+  become: true
+  become_user: root
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+
+- name: Install psutil
+  shell: pip2 install psutil
+  become: true
+  become_user: gpadmin
+  tags:
+    - greengage
+
+- name: Configure source
+  shell: "chdir=/home/gpadmin/greengage {{ item }}"
+  loop:
+    - "./configure --with-perl --with-python --with-pythonsrc-ext --with-libxml --with-uuid=e2fs --with-openssl --with-gssapi --with-ldap --enable-ic-proxy --enable-orafce --enable-mapreduce --prefix=/usr/local/gpdb"
+    - "make -j$(nproc)"
+    - "sudo make -j$(nproc) install"
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+    - make
+
+- name: Chown
+  shell: chown -R gpadmin:gpadmin /usr/local/gpdb*
+  become: true
+  become_user: root
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+    - make
+
+- name: Chown group
+  shell: chgrp -R gpadmin /usr/local/gpdb*
+  become: true
+  become_user: root
+  when: "'gp' in group_names"
+  tags:
+    - greengage 
+    - make
+
+- name: Set source
+  lineinfile:
+    path: /home/gpadmin/.bashrc 
+    line: "source /usr/local/gpdb/greengage_path.sh"
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage  
+    - make
+    - source
+
+- name: Copy file on master
+  template:
+    src: "{{ item.name }}"
+    dest: "{{ item.dest }}"
+    owner: gpadmin
+    group: gpadmin
+  loop:
+    - { name: all_hosts, dest: /home/gpadmin/hostfile_all_hosts }
+    - { name: seg_hosts, dest: /home/gpadmin/hostfile_segment_hosts }
+    - { name: config, dest: /home/gpadmin/init_config }
+  become: true
+  become_user: gpadmin
+  when: "'gp_master' in group_names"
+  tags:
+    - greengage
+    - make
+    - source
+    - file
+
+- name: Add host verify
+  shell: ssh-keyscan -t ed25519 "{{ item }}" >> ~/.ssh/known_hosts
+  become: true
+  become_user: gpadmin
+  loop:
+    - "{{ hostvars[groups['gp_master'][0]].inventory_hostname }}"
+    - "{{ hostvars[groups['gp_standby'][0]].inventory_hostname }}"
+    - "{{ hostvars[groups['gp_segments'][0]].inventory_hostname }}"
+    - "{{ hostvars[groups['gp_segments'][1]].inventory_hostname }}"
+    - "{{ hostvars[groups['gp_segments'][2]].inventory_hostname }}"
+    - "{{ hostvars[groups['gp_segments'][3]].inventory_hostname }}"
+  when: "'gp_master' in group_names"
+  tags:
+    - greengage
+    - make
+    - source
+    - file
+
+- name: Copy pass
+  template:
+    src:  pass
+    dest: /home/gpadmin/.pass
+    owner: gpadmin
+    group: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+    - make
+    - source
+    - test
+
+- name: Create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: gpadmin
+    group: gpadmin
+    recurse: yes
+  loop:
+    - /data1
+    - /data1/master
+    - /data1/primary
+    - /data1/mirror
+  when: "'gp' in group_names"
+  tags:
+    - greengage
+    - make
+    - source
+
+- name: Set env
+  lineinfile:
+    path: /home/gpadmin/.bashrc 
+    line: "export MASTER_DATA_DIRECTORY=/data1/master/gpseg-1"
+  become: true
+  become_user: gpadmin
+  when: "'gp_master' in group_names"
+  tags:
+    - greengage  
+    - make
+    - source
+
+- name: Create folder for pxf
+  file:
+    path: /usr/local/pxf
+    state: directory
+    mode: '0750'
+    owner: gpadmin
+    group: gpadmin
+  become: true
+  when: "'gp' in group_names"
+  tags:
+    - pxf
+    - pxf_make

@@ -1,0 +1,37 @@
+[dns]
+dns01 ansible_host=192.168.57.15 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/dns01/virtualbox/private_key
+
+[routers]
+router01 ansible_host=192.168.57.5  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/router01/virtualbox/private_key 
+
+[minio]
+minio01 ansible_host=192.168.57.3  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/minio01/virtualbox/private_key 
+
+[clickhouse]
+clickhouse01 ansible_host=192.168.57.4  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/clickhouse01/virtualbox/private_key 
+
+[postgresql]
+pg01 ansible_host=192.168.57.2  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/pg01/virtualbox/private_key
+
+[gp:children]
+gp_segments
+gp_master
+gp_standby
+
+[gp_master]
+gpmaster ansible_host=192.168.57.6  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpmaster/virtualbox/private_key
+
+[gp_standby]
+gpstandby ansible_host=192.168.57.7  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpstandby/virtualbox/private_key
+
+[gp_segments]
+gpseg01 ansible_host=192.168.57.8  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpseg01/virtualbox/private_key
+gpseg02 ansible_host=192.168.57.9  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpseg02/virtualbox/private_key
+gpseg03 ansible_host=192.168.57.10  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpseg03/virtualbox/private_key
+gpseg04 ansible_host=192.168.57.11  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/gpseg04/virtualbox/private_key
+
+[log_servers]
+log01 ansible_host=192.168.57.12 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/log01/virtualbox/private_key
+
+
+

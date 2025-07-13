@@ -1,0 +1,45 @@
+---
+
+- name: Enable ssh segments
+  shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && /usr/local/gpdb/bin/gpssh-exkeys -f /home/gpadmin/hostfile_all_hosts" < /home/gpadmin/.pass
+  when: "'gp_master' in group_names"
+  tags:
+    - gg_conf_ssh
+
+- name: Install GG
+  shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && echo -e 'yes\nyes' | gpinitsystem -c /home/gpadmin/init_config -h /home/gpadmin/hostfile_segment_hosts -s gpstandby --mirror-mode=spread -a -q" < /home/gpadmin/.pass
+  when: "'gp_master' in group_names"
+  tags:
+    - gg_conf_ssh
+
+- name: Start greengage
+  shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && export MASTER_DATA_DIRECTORY=/data1/master/gpseg-1 && echo -e 'yes\nyes' | gpstop -r" < /home/gpadmin/.pass
+  #shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && export MASTER_DATA_DIRECTORY=/data1/master/gpseg-1 && gpstart -a" < /home/gpadmin/.pass
+  when: "'gp_master' in group_names"
+  tags:
+    - gg_conf_ssh
+    - gg_start
+
+- name: Add hba rules
+  lineinfile:
+    path: /data1/master/gpseg-1/pg_hba.conf
+    line: "host   all   all   0.0.0.0/0   md5"
+    insertbefore: BOF
+  when: "'gp_master' in group_names or 'gp_standby' in group_names"
+  tags:
+    - gg_conf
+    - gg_hba
+
+- name: Reload config
+  shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && psql -d postgres -c 'select pg_reload_conf();'" < /home/gpadmin/.pass
+  when: "'gp_master' in group_names"
+  tags:
+    - gg_conf
+    - gg_hba
+
+- name: Create SU
+  shell: su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && psql -d postgres -c \"create user power with SUPERUSER LOGIN password 'power';\"" < /home/gpadmin/.pass
+  when: "'gp_master' in group_names"
+  tags:
+    - gg_conf
+   

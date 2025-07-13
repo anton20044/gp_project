@@ -1,0 +1,62 @@
+[ req ]
+default_bits       = 2048
+default_keyfile    = server-key.pem
+distinguished_name = subject
+req_extensions     = req_ext
+x509_extensions    = x509_ext
+string_mask        = utf8only
+[ subject ]
+countryName                  = RU
+countryName_defaults         = RU
+stateOrProvinceName          = Chel
+stateOrProvinceName_defaults = Chel
+localityName                 = Chel
+localityName_defaults        = Chel
+organizationName             = Home
+organizationName_defaults    = Home
+commonName                   = home.local
+commonName_defaults          = home.local
+[ x509_ext ]
+subjectKeyIdentifier         = hash
+authorityKeyIdentifier       = keyid,issuer:always
+basicConstraints             = CA:FALSE
+keyUsage                     = digitalSignature, keyEncipherment
+extendedKeyUsage             = serverAuth, clientAuth
+subjectAltName               = @alt_names
+nsComment                    = "OpenSSL"
+[ req_ext ]
+subjectKeyIdentifier         = hash
+basicConstraints             = CA:FALSE
+keyUsage                     = digitalSignature, keyEncipherment
+extendedKeyUsage             = serverAuth, clientAuth
+subjectAltName               = @alt_names
+nsComment                    = "OpenSSL"
+[alt_names]
+DNS.1     = cluster-db.home.local
+DNS.2     = hp01.home.local
+DNS.3     = hp02.home.local
+DNS.4     = log01.home.local
+DNS.5     = monitor.home.local
+DNS.6     = etcd01.home.local
+DNS.7     = etcd02.home.local
+DNS.8     = etcd03.home.local
+DNS.9     = pg01.home.local
+DNS.10    = pg02.home.local
+DNS.11    = pg03.home.local
+DNS.12    = cluster-db
+DNS.13    = hp01
+DNS.14    = hp02
+DNS.15    = log01
+DNS.16    = monitor
+DNS.17    = etcd01
+DNS.18    = etcd02
+DNS.19    = etcd03
+DNS.20    = pg01
+DNS.21    = pg02
+DNS.22    = pg03
+DNS.23    = lb.home.local
+DNS.24    = lb
+IP.1      = 127.0.0.1
+IP.2      = 192.168.56.2
+IP.3      = 192.168.56.3
+IP.4      = 192.168.56.4

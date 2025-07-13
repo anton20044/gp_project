@@ -1,0 +1,301 @@
+--airports
+
+CREATE EXTERNAL TABLE ext_airports (
+    airport_code varchar(3),
+	airport_name varchar(40)
+)
+LOCATION ('pxf://postgres/airports?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+insert into dv.hub_airports
+select MD5(airport_code), airport_code, airport_name, 'PG_Demo', NOW()
+from ext_airports;
+
+CREATE EXTERNAL TABLE ext_sat_airports (
+    airport_code varchar(3) not null,
+    city varchar(32),
+	coordinates point,
+	timezone VARCHAR(32)
+)
+LOCATION ('pxf://postgres/airports_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+insert into dv.sat_airports
+select md5(airport_code), city, coordinates, timezone, 'PG_Demo', NOW()
+from ext_sat_airports;
+
+CREATE EXTERNAL TABLE ext_link_airports_flights (
+	flight_id varchar(10),
+    airport_code_dep varchar(3),
+	airport_code_a varchar(3)
+)
+LOCATION ('pxf://postgres/airports_link?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+insert into dv.link_airports_flights
+select md5(flight_id) , md5(airport_code_dep), md5(airport_code_a), md5(flight_id), 'PG_Demo', NOW()
+from ext_link_airports_flights;
+
+--aircrafts
+CREATE EXTERNAL TABLE ext_aircrafts (
+    aircraft_code varchar(10),
+	model varchar(40)
+)
+LOCATION ('pxf://postgres/aircrafts?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_aircrafts
+select md5(aircraft_code), aircraft_code, 'PG_Demo', NOW() 
+from ext_aircrafts;
+
+CREATE EXTERNAL TABLE ext_link_aircrafts_seats (
+    aircraft_code varchar(10),
+	seat_no varchar(4)
+)
+LOCATION ('pxf://postgres/aircrafts_link_seats?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.link_aircrafts_seats
+select md5(aircraft_code), md5(aircraft_code), md5(seat_no), 'PG_Demo', NOW() 
+from ext_link_aircrafts_seats;
+
+
+CREATE EXTERNAL TABLE ext_link_aircrafts_flights (
+    aircraft_code varchar(10),
+	flight_id varchar(10)
+)
+LOCATION ('pxf://postgres/aircrafts_link_flights?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.link_aircrafts_flights
+select md5(aircraft_code), md5(aircraft_code), md5(flight_id), 'PG_Demo', NOW() 
+from ext_link_aircrafts_flights;
+
+CREATE EXTERNAL TABLE ext_sat_aircrafts (
+    aircraft_code varchar(10),
+    model varchar(25),
+	range varchar(10)
+)
+LOCATION ('pxf://postgres/aircrafts_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_aircrafts
+select md5(aircraft_code), model, range, 'PG_Demo', NOW() 
+from ext_sat_aircrafts;
+
+--seats
+CREATE EXTERNAL TABLE ext_hub_seats (
+    seat_no varchar(10)
+)
+LOCATION ('pxf://postgres/seats?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_seats
+select md5(seat_no), seat_no, 'PG_Demo', NOW() 
+from ext_hub_seats;
+
+CREATE EXTERNAL TABLE ext_sat_seats (
+    seat_no varchar(10),
+    fare_conditions varchar(10)
+)
+LOCATION ('pxf://postgres/seats_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_seats
+select md5(seat_no), fare_conditions, 'PG_Demo', NOW() 
+from ext_sat_seats;
+
+--flights
+CREATE EXTERNAL TABLE ext_hub_flights (
+    flight_id varchar(10)
+)
+LOCATION ('pxf://postgres/flights?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_flights
+select md5(flight_id), flight_id, 'PG_Demo', NOW() 
+from ext_hub_flights;
+
+CREATE EXTERNAL TABLE ext_sat_flights (
+    flight_id varchar(10),
+    scheduled_departure timestamptz,
+    scheduled_arrival timestamptz,
+    status varchar(20),
+    actual_departure timestamptz,
+    actual_arrival timestamptz
+)
+LOCATION ('pxf://postgres/flights_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_flights
+select md5(flight_id), scheduled_departure, scheduled_arrival, status, actual_departure, actual_arrival, 
+'PG_Demo', NOW(), scheduled_departure::Date 
+from ext_sat_flights;
+
+--bookings
+CREATE EXTERNAL TABLE ext_hub_bookings (
+    book_ref varchar(10)
+)
+LOCATION ('pxf://postgres/bookings?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_bookings
+select md5(book_ref), book_ref, 'PG_Demo', NOW()
+from ext_hub_bookings;
+
+CREATE EXTERNAL TABLE ext_link_bookings_tikets (
+    book_ref varchar(10),
+    ticket_no varchar(15)
+)
+LOCATION ('pxf://postgres/bookings_link?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.link_bookings_tikets
+select md5(book_ref), md5(book_ref), md5(ticket_no), 'PG_Demo', NOW()
+from ext_link_bookings_tikets;
+
+CREATE EXTERNAL TABLE ext_sat_bookings (
+    book_ref varchar(10),
+    bookdate timestamptz,
+    total_amount numeric(10,2)
+)
+LOCATION ('pxf://postgres/bookings_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_bookings
+select md5(book_ref), bookdate, total_amount, 'PG_Demo', NOW(), bookdate::Date
+from ext_sat_bookings;
+
+--tickets
+CREATE EXTERNAL TABLE ext_hub_tickets (
+    ticket_no varchar(15)
+)
+LOCATION ('pxf://postgres/tickets?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_tickets
+select md5(ticket_no), ticket_no, 'PG_Demo', NOW()
+from ext_hub_tickets;
+
+
+CREATE EXTERNAL TABLE ext_sat_tickets (
+    ticket_no varchar(15),
+    passenger_id varchar(20),
+    passenger_name text,
+    contact_data jsonb
+)
+LOCATION ('pxf://postgres/tickets_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_tickets
+select md5(ticket_no), passenger_id, passenger_name, contact_data, 'PG_Demo', NOW()
+from ext_sat_tickets;
+
+
+--boarding_passes
+CREATE EXTERNAL TABLE ext_hub_boarding_passes (
+    flight_id varchar(15)
+)
+LOCATION ('pxf://postgres/boarding_passes?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.hub_boarding_passes
+select md5(flight_id), flight_id, 'PG_Demo', NOW()
+from ext_hub_boarding_passes;
+
+CREATE EXTERNAL TABLE ext_sat_boarding_passes (
+    flight_id varchar(15),
+    boarding_no integer,
+    seat_no varchar(4)
+)
+LOCATION ('pxf://postgres/boarding_passes_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_boarding_passes
+select md5(flight_id), boarding_no, seat_no, 'PG_Demo', NOW()
+from ext_sat_boarding_passes;
+
+
+--ticket_flights
+
+CREATE EXTERNAL TABLE ext_link_tikets_flight_boarding (
+    ticket_no varchar(15),
+    flight_id varchar(15)
+)
+LOCATION ('pxf://postgres/ticket_flights_link?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.link_tikets_flight_boarding
+select md5(ticket_no), md5(ticket_no), md5(flight_id), 'PG_Demo', NOW()
+from ext_link_tikets_flight_boarding;
+
+CREATE EXTERNAL TABLE ext_sat_ticket_flights (
+    ticket_no varchar(15),
+    flight_id varchar(15),
+    fare_conditions varchar(10),
+    amount numeric(10,2)
+)
+LOCATION ('pxf://postgres/ticket_flights_sat?PROFILE=s3:csv&SERVER=minio&FILE_HEADER=IGNORE&S3_SELECT=ON'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+
+insert into dv.sat_ticket_flights
+select md5(ticket_no), md5(ticket_no), fare_conditions, amount, 'PG_Demo', NOW()
+from ext_sat_ticket_flights;
+
+
+
+-------Проверяем распределение данных
+select gp_segment_id, count(*) from dv.hub_boarding_passes group by gp_segment_id;
+select gp_segment_id, count(*) from dv.hub_airports group by gp_segment_id;
+select gp_segment_id, count(*) from dv.hub_bookings group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_tickets group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_seats group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_flights group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_bookings group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_boarding_passes group by gp_segment_id;
+select gp_segment_id, count(*) from dv.sat_airports group by gp_segment_id;
+select gp_segment_id, count(*) from dv.link_tikets_flight_boarding group by gp_segment_id;
+select gp_segment_id, count(*) from dv.hub_flights group by gp_segment_id;
+select gp_segment_id, count(*) from dv.hub_seats group by gp_segment_id;
+select gp_segment_id, count(*) from dv.hub_tickets group by gp_segment_id;
+select gp_segment_id, count(*) from dv.link_airports_flights group by gp_segment_id;
+select gp_segment_id, count(*) from dv.link_bookings_tikets group by gp_segment_id;
+select gp_segment_id, count(*) from dv.link_aircrafts_flights group by gp_segment_id;
+select gp_segment_id, count(*) from dv.link_aircrafts_seats group by gp_segment_id;

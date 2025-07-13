@@ -1,0 +1,26 @@
+$TTL 3600
+$ORIGIN 56.168.192.in-addr.arpa.
+56.168.192.in-addr.arpa.  IN      SOA     dns01.home.local. root.home.local. (
+                            2711201407 ; serial
+                            3600       ; refresh (1 hour)
+                            600        ; retry (10 minutes)
+                            86400      ; expire (1 day)
+                            600        ; minimum (10 minutes)
+                        )
+
+			IN      NS      dns01.home.local.
+
+; DNS Servers
+15			IN      PTR     dns01.home.local.
+2			IN      PTR	    pg01.home.local.
+3			IN      PTR     minio01.home.local.
+4			IN      PTR     clickhouse01.home.local.
+5			IN	    PTR	    router01.home.local.
+6			IN	    PTR	    gpmaster.home.local.
+7			IN	    PTR	    gpstandby.home.local.
+8			IN	    PTR	    gpseg01.home.local.
+9			IN	    PTR	    gpseg02.home.local.
+10			IN	    PTR	    gpseg03.home.local.
+11			IN	    PTR	    gpseg04.home.local.
+12			IN	    PTR	    log01.home.local.
+

@@ -1,0 +1,24 @@
+---
+ip_route: 192.168.56.100
+ip_route_pub: 192.168.50.1
+
+
+
+
+pg_ver: 16
+
+
+exporters_node: 1.9.1
+exporters_pg: 0.17.1
+prom_ver: 3.3.0
+alert_ver: 0.28.1
+
+exporters_load: 1
+
+db_connections: 100
+
+domain: home.local
+
+log_srv: "log01.home.local"
+
+ansible_python_interpreter: /usr/bin/python3

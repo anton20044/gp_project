@@ -1,0 +1,99 @@
+---q1
+--gp
+CREATE writable external TABLE vitr2 (
+    flight_id varchar(20), 
+    fare_conditions varchar(20), 
+    airport_name_dep varchar(20), 
+    airport_code_dep varchar(20), 
+    airport_name_aa varchar(20), 
+    airport_code_aa varchar(20), 
+    count integer
+)
+LOCATION ('pxf://clickhouse/v2/?PROFILE=s3:csv&SERVER=minio'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+insert into vitr2	
+select hl.flight_id, ss.fare_conditions, had.airport_name, had.airport_code, haa.airport_name, haa.airport_code,
+count(ss.name_system) 
+	from dv.hub_flights hl inner join dv.link_airports_flights laf on hl.hash_key_flight_id = laf.hash_key_flight_id
+	inner join dv.sat_flights sf  on sf.hash_key_flight_id = laf.hash_key_flight_id
+	inner join hub_airports haa on haa.hash_key_airport_code = laf.hash_key_airport_code_arrival
+	inner join hub_airports had on had.hash_key_airport_code = laf.hash_key_airport_code_departure
+	inner join link_aircrafts_flights larf on larf.hash_key_flight_id = laf.hash_key_flight_id
+	inner join link_aircrafts_seats las on las.hash_key_aircrafts = larf.hash_key_aircrafts
+	inner join sat_seats ss on ss.hash_key_seat_no = las.hash_key_seat_no
+where sf.scheduled_departure between '2016-10-01' and '2017-01-01'
+group by hl.flight_id, ss.fare_conditions, had.airport_name, had.airport_code, haa.airport_name, haa.airport_code
+
+
+--clickhouse
+CREATE TABLE vitr2 (
+	flight_id String, 
+    fare_conditions String, 
+    airport_name_dep String, 
+    airport_code_dep String, 
+    airport_name_aa String, 
+    airport_code_aa String, 
+    count integer
+    )
+    ENGINE = S3('https://minio01.home.local:9000/clickhouse/v2/715-0000000115_{0..7}', 'minioadmin', 'minioadmin', 'CSV');
+
+
+CREATE TABLE vitr2_mt (
+	flight_id String, 
+    fare_conditions String, 
+    airport_name_dep String, 
+    airport_code_dep String, 
+    airport_name_aa String, 
+    airport_code_aa String, 
+    count integer
+    )
+ENGINE = MergeTree
+ORDER BY flight_id;
+
+insert into vitr2_mt
+select * from vitr2;
+
+select * from vitr2_mt
+
+---q2
+--gp
+CREATE writable external TABLE vitr3 (
+    passenger_name varchar(30),
+    book_ref varchar(10), 
+    total_amount numeric(10,2)
+)
+LOCATION ('pxf://clickhouse/v3/?PROFILE=s3:csv&SERVER=minio'
+)
+FORMAT 'CSV' (DELIMITER ',');
+
+insert into vitr3
+select st.passenger_name, hb.book_ref, SUM(sb.total_amount) 
+	from dv.hub_bookings hb inner join dv.sat_bookings sb on hb.hash_key_book_ref = sb.hash_key_book_ref
+		inner join dv.link_bookings_tikets lbt on lbt.hash_key_book_ref = hb.hash_key_book_ref
+		inner join dv.sat_tickets st on st.hash_key_ticket_no = lbt.hash_key_tiket_no
+group by st.passenger_name, hb.book_ref;
+
+--clickhouse
+CREATE TABLE vitr3 (
+	passenger_name String,
+    book_ref String, 
+    total_amount numeric(10,2)
+    )
+ENGINE = S3('https://minio01.home.local:9000/clickhouse/v3/715-0000000189_{0..7}', 'minioadmin', 'minioadmin', 'CSV');
+
+
+CREATE TABLE vitr3_mt (
+	passenger_name String,
+    book_ref String, 
+    total_amount numeric(10,2)
+    )
+ENGINE = MergeTree
+ORDER BY passenger_name
+
+insert into vitr3_mt
+select * from vitr3;
+
+
+select * from vitr3_mt

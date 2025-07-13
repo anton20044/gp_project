@@ -1,0 +1,39 @@
+global_defs {
+# Keepalived process identifier
+lvs_id {{ keep_id }}
+}
+# Script used to check if HAProxy is running
+vrrp_script check_team {
+connect_ip {{ keep_team }}
+connect_timeout 3
+}
+# Virtual interface
+# The priority specifies the order in which the assigned interface to take over in a failo>
+vrrp_instance VI_01 {
+state {{ keep_state }}
+interface {{ keep_interface }}
+virtual_router_id 51
+priority {{ keep_proirity }}
+# The virtual ip address shared between the two loadbalancers
+virtual_ipaddress {
+{{ keep_vip }}
+}
+track_script {
+check_team
+}
+}
+
+
+vrrp_instance VI_02 {
+state {{ keep_state }}
+interface {{ keep_interface_out }}
+virtual_router_id 52
+priority {{ keep_proirity }}
+virtual_ipaddress {
+{{ keep_vip_out }}
+}
+track_script {
+check_team
+}
+}
+

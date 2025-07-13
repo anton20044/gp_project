@@ -1,0 +1,75 @@
+---
+
+- name: Download Go
+  shell: wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz -P /home/gpadmin/
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - pxf 
+
+- name: Unzip Go
+  shell: tar -xvf /home/gpadmin/go1.24.5.linux-amd64.tar.gz -C /home/gpadmin/
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - pxf
+
+- name: Inline
+  lineinfile:
+    path: /home/gpadmin/.bashrc 
+    line: "{{ item }}"
+  become: true
+  become_user: gpadmin
+  loop:
+    - "export GOPATH=/home/gpadmin/go"
+    - "export GOPROXY=https://proxy.golang.org"
+    - "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin"
+    - "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+    - "export PXF_HOME=/usr/local/pxf"
+    - "export PXF_BASE=${HOME}/pxf-base"
+    - "export PATH=/usr/local/pxf/bin:$PATH"
+  when: "'gp' in group_names"
+  tags:
+    - pxf
+
+- name: Setup dep
+  shell: su gpadmin -c "source /home/gpadmin/.bashrc && /home/gpadmin/go/bin/go install github.com/onsi/ginkgo/v2/ginkgo@latest " < /home/gpadmin/.pass
+  when: "'gp' in group_names"
+  tags:
+    - pxf 
+
+- name: Create folder for pxf
+  ansible.builtin.file:
+    path: /home/gpadmin/pxf
+    state: directory
+    mode: '0750'
+    owner: gpadmin
+    group: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - pxf
+
+- name: Git clone
+  shell: git clone https://github.com/arenadata/pxf.git /home/gpadmin/pxf
+  become: true
+  become_user: gpadmin
+  when: "'gp' in group_names"
+  tags:
+    - pxf 
+    - pxf_make
+
+#- name: Make pxf
+#  shell: "chdir=/home/gpadmin/pxf {{ item }}"
+#  loop:
+    #- su gpadmin -c "source /home/gpadmin/source &&  make -C /home/gpadmin/pxf " < /home/gpadmin/.pass
+#    - su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && export PXF_BASE=${HOME}/pxf-base && export PXF_HOME=/usr/local/pxf && export GPHOME=/usr/local/gpdb && export GOPATH=/home/gpadmin/go && export PATH=/usr/local/pxf/bin:/usr/local/gpdb/bin:/usr/local/gpdb/bin:/usr/local/gpdb/bin:/usr/local/pxf/bin:/usr/local/gpdb/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/home/gpadmin/go/bin:/usr/local/go/bin:/home/gpadmin/go/bin && make " < /home/gpadmin/.pass
+#    - su gpadmin -c "source /usr/local/gpdb/greengage_path.sh && export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && export PATH=/usr/local/pxf/bin:/usr/local/gpdb/bin:/usr/local/gpdb/bin:/usr/local/gpdb/bin:/usr/local/pxf/bin:/usr/local/gpdb/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/home/gpadmin/go/bin:/usr/local/go/bin:/home/gpadmin/go/bin && make install " < /home/gpadmin/.pass
+  #become: true
+  #become_user: gpadmin
+#  when: "'gp' in group_names"
+#  tags:
+#    - pxf 
+#    - pxf_make
+

@@ -1,0 +1,196 @@
+---
+
+- name: Add repo key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  tags:
+    - postgresql
+
+- name: Add mirror repo
+  apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+    state: present
+  tags:
+    - postgresql
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - postgresql
+
+- name: Copy sh
+  template:
+    src: "{{ item.name }}"
+    dest: "{{ item.dst }}"
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - { name: patroni.sh.j2, dst: /etc/profile.d/patroni.sh }
+  when: "'postgresql' in group_names"
+
+- name: Install software on Ubuntu
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  become: true
+  become_user: root
+  loop:
+    - { name: traceroute }
+    - { name: python3-psycopg2 }
+    - { name: "postgresql-{{ pg_ver }}" }
+    - { name: "postgresql-{{ pg_ver }}-repack" }
+    - { name: postgresql-contrib }
+    - { name: sshpass }
+    - { name: barman-cli }
+    - { name: python3 }
+    - { name: python3-pip }
+    - { name: zip }
+    - { name: s3cmd }
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql
+
+- name: Install soft from pip
+  ansible.builtin.pip:
+    name: "{{ item.name }}"
+    state: present
+  loop:
+    - { name: setuptools }
+    - { name: testresources }
+    - { name: psycopg2 }
+    - { name: "patroni=={{ patroni_ver }}" }
+    - { name: "ydiff=={{ ydiff_ver }}" }
+    - { name: "python-etcd" }
+  when: "'postgresql' in group_names"
+  become: true
+  become_user: root
+  tags:
+    - postgresql
+
+- name: Permissions on config
+  file:
+    path: /etc/postgresql/16/main/
+    state: directory
+    mode: '0744'
+
+- name: Permissions on log
+  file:
+    path: "/var/lib/postgresql/{{ pg_ver }}/log"
+    owner: postgres
+    group: postgres
+    state: directory
+    mode: '0744'
+
+- name: Start postgresql
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql
+
+- name: Create user for replication
+  community.postgresql.postgresql_user:
+    user: "{{ item.name }}"
+    password: "{{ item.passwd }}"
+    role_attr_flags: "{{ item.role }}"
+  become: true
+  become_user: postgres
+  when: ("'postgresql' in group_names") and (pg_state == "master")
+  loop: "{{ pg_user }}"
+  environment:
+    PGOPTIONS: "-c password_encryption=scram-sha-256"
+  tags:
+    - postgresql
+
+- name: Add rules in postgres hba
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
+    contype: host
+    users: "{{ item.user }}"
+    source: "{{ item.src }}"
+    databases: "{{ item.db }}"
+    method: scram-sha-256
+  when: ("'postgresql' in group_names") 
+  loop: "{{ pg_hba }}"
+  tags:
+    - postgresql
+    - pg_hba
+
+- name: Add postgresql server conf
+  lineinfile:
+    path: "/etc/postgresql/{{ pg_ver }}/main/postgresql.conf"
+    line: "{{ item.name }} = {{ item.value }}"
+  loop: "{{ pg_config }}"
+  when: ("'postgresql' in group_names")
+  tags:
+    - postgresql
+    - pg_conf
+
+- name: Create DB
+  community.postgresql.postgresql_db:
+    name: "{{ app_db }}"
+  when: ("'postgresql' in group_names") and (pg_state == "master")
+  become: true
+  become_user: postgres
+  tags:
+    - postgresql
+
+- name: Grant monitor
+  shell: 'psql -d {{ app_db }} -c "grant monitor TO pg_monitor;"'
+  become: true
+  become_user: postgres
+  when: ("'postgresql' in group_names") and (pg_state == "master")
+  tags:
+    - postgresql
+
+- name: Grant app
+  shell: 'psql -d {{ app_db }} -c "alter database {{ app_db }} owner to app;"'
+  become: true
+  become_user: postgres
+  when: ("'postgresql' in group_names") and (pg_state == "master")
+  tags:
+    - postgresql
+
+- name: Restart postgresql
+  service:
+    name: postgresql
+    state: restarted
+    enabled: no
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql
+
+- name: Copy bash sh
+  lineinfile:
+    path: /usr/share/bash-completion/bash_completion
+    line: 'complete -W "topology switchover resume pause list history edit-config reload restart" patronictl'    
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql
+
+- name: Create directory
+  file:
+    path: "/var/lib/postgresql/export"
+    state: directory
+    owner: postgres
+    group: postgres    
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql
+
+- name: Copy script import
+  template:
+    src:  script
+    dest: /var/lib/postgresql/sql_import.sh
+    owner: postgres
+    group: postgres
+    mode: '0774'
+  when: "'postgresql' in group_names"
+  tags:
+    - postgresql

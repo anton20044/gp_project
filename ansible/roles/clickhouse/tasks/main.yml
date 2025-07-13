@@ -1,0 +1,77 @@
+---
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - clickhouse
+
+- name: Install software on Ubuntu
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  become: true
+  become_user: root
+  loop:
+    - { name: apt-transport-https }
+    - { name: ca-certificates }
+    - { name: curl  }
+    - { name: gnupg }
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+
+- name: Download key
+  shell: curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | sudo gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+
+- name: Apt source
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch=amd64] https://packages.clickhouse.com/deb stable main"
+    state: present
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+
+- name: Update cache
+  apt:
+    cache_valid_time: 3600
+  tags:
+    - clickhouse
+
+- name: Install clickhouse
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  become: true
+  become_user: root
+  loop:
+    - { name: clickhouse-server }
+    - { name: clickhouse-client }
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+
+- name: Copy clickhouse config
+  copy:
+    src: listen_host.xml
+    dest: /etc/clickhouse-server/config.d/listen_host.xml
+    owner: clickhouse
+    group: clickhouse
+    mode: '0644'
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+
+- name: Start clickhouse
+  service:
+    name: clickhouse-server
+    state: started
+    enabled: yes
+  when: "'clickhouse' in group_names"
+  tags:
+    - clickhouse
+

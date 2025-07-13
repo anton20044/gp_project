@@ -1,0 +1,89 @@
+---
+
+- name: update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - dns
+  when: "'dns' in group_names"
+
+- name: install application
+  ansible.builtin.apt:
+    pkg:
+    - bind9
+    - bind9-utils
+  tags:
+    - dns
+  when: "'dns' in group_names"
+
+- name: stop bind
+  ansible.builtin.service:
+    name: named
+    state: stopped
+    enabled: true
+  when: "'dns' in group_names"
+  tags:
+    - dns
+
+- name: copy named.conf on master
+  copy:
+    src: named.conf.default-zones
+    dest: /etc/bind/named.conf.default-zones
+    owner: root
+    group: bind
+    mode: 0640
+  tags:
+    - dns
+  when: ansible_hostname=="dns01"
+
+- name: copy named.conf on slave
+  copy:
+    src: named.conf.default-zones.slave
+    dest: /etc/bind/named.conf.default-zones
+    owner: root
+    group: bind
+    mode: 0640
+  tags:
+    - dns
+  when: ansible_hostname=="dns02"
+
+- name: copy zones
+  copy:
+    src: "{{ item }}"
+    dest: /etc/bind/
+    owner: root
+    group: bind
+    mode: 0660
+  tags:
+    - dns
+  when: "'dns' in group_names"
+  with_fileglob:
+    - named.home.local
+    - db.56.168.192
+    - named.zonetransfer.key
+    - named.conf.options
+
+- name: copy resolv.conf to the servers
+  template:
+    src: client.resolv.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - dns
+    - raft
+    - postgresql
+    - barman
+    - haproxy
+    - elk
+
+- name: start bind
+  ansible.builtin.service:
+    name: named
+    state: started
+    enabled: true
+  when: "'dns' in group_names"
+  tags:
+    - dns

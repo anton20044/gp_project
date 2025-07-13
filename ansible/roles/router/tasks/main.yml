@@ -1,0 +1,71 @@
+---
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - routers
+
+- name: Install soft
+  apt:
+    name:
+    - keepalived
+    - iptables-persistent
+  tags:
+    - routers
+
+- name: Copy keepalived config
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - routers
+
+- name: Start keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: true
+  tags:
+    - routers
+
+- name: set up forward packages across routers
+  sysctl:
+    name: net.ipv4.conf.all.forwarding
+    value: '1'
+    state: present
+  tags:
+    - routers
+
+- name: Enable iptables-persistent
+  ansible.builtin.service:
+    name: iptables.service
+    enabled: true
+  tags:
+    - routers
+
+- name: Setup iptables rules
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  with_items:
+    - { src: "iptables_rules.ipv4", dest: "/etc/iptables_rules.ipv4", mode: "0640" }
+  tags:
+    - routers
+
+- name: Apply iptables rules
+  ansible.builtin.shell: /sbin/iptables-restore < /etc/iptables_rules.ipv4
+  tags:
+    - routers
+
+- name: Safe iptables rules
+  ansible.builtin.shell: netfilter-persistent save
+  tags:
+    - routers

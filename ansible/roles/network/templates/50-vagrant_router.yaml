@@ -1,0 +1,17 @@
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s8:
+      addresses:
+      - {{ ip_addr }}/24
+    enp0s9:
+      addresses:
+      - {{ ip_addr_pub }}/24
+      routes:
+      - to: 0.0.0.0/0
+        via: {{ ip_route_pub }}
+    enp0s16:
+      addresses:
+      - {{ ip_addr_mg }}/24

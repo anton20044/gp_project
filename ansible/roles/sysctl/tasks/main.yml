@@ -1,0 +1,65 @@
+---
+
+- name: Create file
+  file:
+    path: /etc/sysctl.d/90-sysctl.conf
+    state: touch
+    owner: root
+    group: root
+    mode: 0644
+  when: "'postgresql' in group_names"
+  tags:
+    - sysctl
+
+- name: Add data in sysctl
+  lineinfile:
+    path: /etc/sysctl.d/90-sysctl.conf
+    line: "{{ item.name }}={{ item.value }}"
+    state: present
+  when: "'postgresql' in group_names"
+  loop: "{{ sysctl }}"
+  tags:
+    - sysctl
+
+- name: sysctl apply
+  service:
+    name: procps
+    state: restarted 
+  tags:
+    - sysctl
+
+- name: Disable SWAP
+  shell: sed -i '/ swap / s/^/#/' /etc/fstab
+  when: "'postgresql' in group_names"
+  tags:
+    - sysctl
+
+- name: Create file
+  file:
+    path: /etc/sysctl.d/91-sysctl.conf
+    state: touch
+    owner: root
+    group: root
+    mode: 0644
+  when: "'gp' in group_names"
+  tags:
+    - sysctl
+
+- name: Add data in sysctl
+  lineinfile:
+    path: /etc/sysctl.d/91-sysctl.conf
+    line: "{{ item.name }}={{ item.value }}"
+    state: present
+  when: "'gp' in group_names"
+  loop: "{{ sysctl }}"
+  tags:
+    - sysctl
+
+- name: sysctl apply
+  service:
+    name: procps
+    state: restarted 
+  when: "'gp' in group_names"
+  tags:
+    - sysctl
+

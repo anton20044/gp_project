@@ -1,0 +1,32 @@
+---
+
+- name: tz setting
+  ansible.builtin.copy:
+    src: /usr/share/zoneinfo/Europe/Moscow
+    dest: /etc/localtime
+    remote_src: yes
+  tags:
+    - time
+
+- name: update
+  apt:
+    update_cache=yes cache_valid_time=3600
+  tags:
+    - time
+
+- name: install ntp
+  ansible.builtin.apt:
+    pkg:
+    - ntp
+    - ntpdate
+  tags:
+    - time
+
+- name: restart ntp
+  service:
+    name: ntp
+    state: restarted
+  tags:
+    - time
+
+

@@ -1,0 +1,59 @@
+---
+- name: Update
+  apt:
+    update_cache=yes cache_valid_time=3600
+  tags:
+    - network
+
+- name: Install OpenvSwitch
+  ansible.builtin.apt:
+    pkg:
+    - openvswitch-dbg
+  tags:
+    - network
+
+- name: Disable default route
+  template:
+    src: 50-cloud-init.yaml
+    dest: /etc/netplan/50-cloud-init.yaml
+    owner: root
+    group: root
+    mode: 0600
+  #when: "'routers' not in group_names"
+  tags:
+    - network
+
+- name: Add default gateway
+  template:
+    src: 50-vagrant.yaml
+    dest: /etc/netplan/50-vagrant.yaml
+    owner: root
+    group: root
+    mode: 0600
+  when: "'routers' not in group_names"
+  tags:
+    - network
+
+- name: Add default gateway for routers
+  template:
+    src: 50-vagrant_router.yaml
+    dest: /etc/netplan/50-vagrant.yaml
+    owner: root
+    group: root
+    mode: 0600
+  when: "'routers' in group_names"
+  tags:
+    - network
+- name: Netplan apply
+  ansible.builtin.shell: netplan apply
+  #when: "'routers' not in group_names"
+  tags:
+    - network
+
+
+#- name: Restart host
+#  reboot:
+#    reboot_timeout: 300
+#  when: "'routers' not in group_names"
+#  tags:
+#    - network

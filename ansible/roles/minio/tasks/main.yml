@@ -1,0 +1,105 @@
+---
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Download pak
+  shell: wget https://dl.min.io/server/minio/release/linux-amd64/minio_20250613113347.0.0_amd64.deb -P /tmp/minio
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Install minio
+  ansible.builtin.apt:
+    deb: /tmp/minio/minio_20250613113347.0.0_amd64.deb 
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Add group
+  ansible.builtin.group:
+    name: minio-user
+    state: present
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Add user minio
+  ansible.builtin.user:
+    name: minio-user
+    create_home: yes
+    uid: 990
+    group: minio-user
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Create folder 
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: minio-user
+    group: minio-user
+    recurse: true
+  loop:
+    - "{{ minio_data }}" 
+    - "/etc/minio/certs"
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Copy cert on minio
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0660'
+    owner: minio-user
+    group: minio-user
+  loop:
+    - { src: private.key, dest: /etc/minio/certs/private.key }
+    - { src: pub.key, dest: /etc/minio/certs/public.crt }
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Copy conf minio
+  template:
+    src: minio
+    dest: /etc/default/minio
+    mode: '0644'
+    owner: root
+    group: root
+  when: "'minio' in group_names"
+  tags:
+    - minio
+
+- name: Copy cert on servers DB
+  copy:
+    src: pub.key
+    dest: /usr/local/share/ca-certificates/minio.crt
+    mode: '0644'
+    owner: root
+    group: root
+  when: "'minio' not in group_names"
+  tags:
+    - minio
+  
+- name: Install cert
+  shell: update-ca-certificates
+  when: "'minio' not in group_names"
+  tags:
+    - minio
+
+- name: Start minio
+  service:
+    name: minio
+    state: started
+    enabled: yes
+  when: "'minio' in group_names"
+  tags:
+    - minio

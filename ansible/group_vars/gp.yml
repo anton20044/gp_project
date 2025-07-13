@@ -1,0 +1,41 @@
+---
+gp_mtu: 9000
+count_segments: 16
+gp_pass: gpadmin
+
+sysctl:
+  - { name: 'vm.swappiness', value: '0' }
+  - { name: 'kernel.core_pipe_limit', value: '0' }
+  - { name: 'net.core.rmem_max', value: '2097152' }
+  - { name: 'net.core.rmem_default', value: '26214400' }
+  - { name: 'net.core.wmem_max', value: '2097152' }
+  - { name: 'net.core.wmem_default', value: '26214400' }
+  - { name: 'net.ipv6.conf.all.disable_ipv6', value: '1' }
+  - { name: 'net.ipv6.conf.default.disable_ipv6', value: '1' }
+  - { name: 'kernel.sysrq', value: '1' }
+  - { name: 'kernel.core_uses_pid', value: '1' }
+  - { name: 'kernel.shmmni', value: '4096' }
+  - { name: 'kernel.sem', value: '250 2048000 200 8192' }
+  - { name: 'kernel.msgmnb', value: '65536' }
+  - { name: 'kernel.msgmax', value: '65536' }
+  - { name: 'kernel.msgmni', value: '2048' }
+  - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+  - { name: 'net.ipv4.conf.default.accept_source_route', value: '0' }
+  - { name: 'net.ipv4.tcp_max_syn_backlog', value: '4096' }
+  - { name: 'net.ipv4.conf.all.arp_filter', value: '1' }
+  - { name: 'net.ipv4.ip_local_port_range', value: '10000 65535' }
+  - { name: 'net.ipv4.ipfrag_high_thresh', value: '41943040' }
+  - { name: 'net.ipv4.ipfrag_low_thresh', value: '31457280' }
+  - { name: 'net.ipv4.ipfrag_time', value: '60' }
+  - { name: 'net.core.netdev_max_backlog', value: '10000' }
+  - { name: 'vm.overcommit_memory', value: '2' }
+  - { name: 'vm.overcommit_ratio', value: '95' }
+  - { name: 'vm.swappiness', value: '10' }
+  - { name: 'vm.zone_reclaim_mode', value: '0' }
+  - { name: 'vm.dirty_expire_centisecs', value: '500' }
+  - { name: 'vm.dirty_writeback_centisecs', value: '100' }
+  - { name: 'vm.dirty_background_ratio', value: '0' }
+  - { name: 'vm.dirty_ratio', value: '0' }
+  - { name: 'vm.dirty_background_bytes', value: '1610612736' }
+  - { name: 'vm.dirty_bytes', value: '4294967296' }
+  

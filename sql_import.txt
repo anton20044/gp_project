@@ -1,0 +1,51 @@
+#!/bin/bash
+
+psql -d demo -c "COPY(select airport_code, airport_name  from bookings.airports) TO '/var/lib/postgresql/export/airports'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select airport_code, city, coordinates, timezone  from bookings.airports) TO '/var/lib/postgresql/export/airports_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select flight_id, ad.airport_code, aa.airport_code from bookings.flights f inner join bookings.airports ad on f.departure_airport = ad.airport_code inner join bookings.airports aa on f.arrival_airport = aa.airport_code) TO '/var/lib/postgresql/export/airports_link'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select aircraft_code, model  from bookings.aircrafts) TO '/var/lib/postgresql/export/aircrafts'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select aircraft_code, model, range  from bookings.aircrafts) TO '/var/lib/postgresql/export/aircrafts_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select a.aircraft_code, seat_no  from bookings.aircrafts a inner join bookings.seats s on s.aircraft_code = a.aircraft_code) TO '/var/lib/postgresql/export/aircrafts_link_seats'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select a.aircraft_code, f.flight_id  from bookings.aircrafts a inner join bookings.flights f on f.aircraft_code = a.aircraft_code) TO '/var/lib/postgresql/export/aircrafts_link_flights'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select seat_no from bookings.seats) TO '/var/lib/postgresql/export/seats'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select seat_no, fare_conditions  from bookings.seats) TO '/var/lib/postgresql/export/seats_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select flight_id from bookings.flights) TO '/var/lib/postgresql/export/flights'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select flight_id, scheduled_departure, scheduled_arrival, status, actual_departure, actual_arrival  from bookings.flights) TO '/var/lib/postgresql/export/flights_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select book_ref from bookings.bookings) TO '/var/lib/postgresql/export/bookings'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select book_ref, book_date, total_amount  from bookings.bookings) TO '/var/lib/postgresql/export/bookings_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select b.book_ref, t.ticket_no from bookings.bookings b inner join bookings.tickets t on t.book_ref = b.book_ref) TO '/var/lib/postgresql/export/bookings_link'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select ticket_no from bookings.tickets) TO '/var/lib/postgresql/export/tickets'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select ticket_no, passenger_id, passenger_name, contact_data from bookings.tickets) TO '/var/lib/postgresql/export/tickets_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select flight_id from bookings.boarding_passes) TO '/var/lib/postgresql/export/boarding_passes'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select flight_id, boarding_no, seat_no from bookings.boarding_passes) TO '/var/lib/postgresql/export/boarding_passes_sat'  WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select ticket_no, flight_id, fare_conditions, amount from bookings.ticket_flights) TO '/var/lib/postgresql/export/ticket_flights_sat' WITH (FORMAT CSV, HEADER);"
+psql -d demo -c "COPY(select ticket_no, flight_id from bookings.ticket_flights) TO '/var/lib/postgresql/export/ticket_flights_link'  WITH (FORMAT CSV, HEADER);"
+
+
+
+
+
+s3cmd put export/aircrafts s3://postgres/
+s3cmd put export/aircrafts_sat s3://postgres/
+s3cmd put export/aircrafts_link_seats s3://postgres/
+s3cmd put export/aircrafts_link_flights s3://postgres/
+s3cmd put export/airports s3://postgres/
+s3cmd put export/airports_sat s3://postgres/
+s3cmd put export/airports_link s3://postgres/
+s3cmd put export/seats s3://postgres/
+s3cmd put export/seats_sat s3://postgres/
+s3cmd put export/flights s3://postgres/
+s3cmd put export/flights_sat s3://postgres/
+s3cmd put export/bookings s3://postgres/
+s3cmd put export/bookings_sat s3://postgres/
+s3cmd put export/bookings_link s3://postgres/
+s3cmd put export/tickets s3://postgres/
+s3cmd put export/tickets_sat s3://postgres/
+s3cmd put export/boarding_passes s3://postgres/
+s3cmd put export/boarding_passes_sat s3://postgres/
+s3cmd put export/ticket_flights_sat s3://postgres/
+s3cmd put export/ticket_flights_link s3://postgres/
+
+
+
+
